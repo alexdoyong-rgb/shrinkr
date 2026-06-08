@@ -14,7 +14,6 @@ import { v4 as uuidv4 } from 'uuid'
 const TMP_DIR = path.join(process.env.TMPDIR || '/tmp', 'shrinkr')
 const FILE_TTL_MS = 15 * 60 * 1000 // 15 minutes
 
-// In-memory registry: fileId → { originalPath, compressedPath, expiresAt, mimeType, fileName }
 interface FileRecord {
   fileId: string
   originalPath: string
@@ -25,7 +24,6 @@ interface FileRecord {
   targetBytes: number
 }
 
-// Use a module-level Map that survives across requests in the same process
 declare global {
   // eslint-disable-next-line no-var
   var __shrinkrStore: Map<string, FileRecord> | undefined
@@ -46,10 +44,6 @@ async function ensureTmpDir() {
   }
 }
 
-/**
- * Save an uploaded file buffer to disk and register it.
- * Returns the fileId.
- */
 export async function storeUpload(
   buffer: Buffer,
   originalName: string,
@@ -77,9 +71,6 @@ export async function storeUpload(
   return fileId
 }
 
-/**
- * Register the path to a compressed output file.
- */
 export async function storeCompressed(
   fileId: string,
   compressedPath: string,
@@ -89,31 +80,19 @@ export async function storeCompressed(
   record.compressedPath = compressedPath
 }
 
-/**
- * Get a file record by ID.
- */
 export function getRecord(fileId: string): FileRecord | undefined {
   return getStore().get(fileId)
 }
 
-/**
- * Get the path to a compressed file for streaming.
- */
 export function getCompressedPath(fileId: string): string | undefined {
   return getStore().get(fileId)?.compressedPath
 }
 
-/**
- * Get a unique path for the compressed output.
- */
 export function getCompressedOutputPath(fileId: string, mimeType: string): string {
   const ext = mimeTypeToExt(mimeType)
   return path.join(TMP_DIR, `${fileId}_compressed${ext}`)
 }
 
-/**
- * Delete both files and remove from store.
- */
 export async function deleteRecord(fileId: string): Promise<void> {
   const record = getStore().get(fileId)
   if (!record) return
@@ -126,9 +105,6 @@ export async function deleteRecord(fileId: string): Promise<void> {
   getStore().delete(fileId)
 }
 
-/**
- * Schedule automatic deletion after TTL.
- */
 function scheduleCleanup(fileId: string) {
   setTimeout(() => deleteRecord(fileId), FILE_TTL_MS + 1000)
 }
@@ -143,13 +119,10 @@ function mimeTypeToExt(mimeType: string): string {
   return map[mimeType] ?? ''
 }
 
-/**
- * Purge all expired files (run periodically or on startup).
- */
 export async function purgeExpired(): Promise<void> {
   const store = getStore()
   const now = Date.now()
-  for (const [id, record] of store.entries()) {
+  for (const [id, record] of Array.from(store.entries())) {
     if (record.expiresAt < now) {
       await deleteRecord(id)
     }
