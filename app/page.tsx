@@ -144,7 +144,7 @@ export default function Home() {
             </div>
 
             {/* Preset selector */}
-            {showPresets && !isCompressing && (
+            {selectedFile {showPresets && !isCompressing && ({showPresets && !isCompressing && ( stage === 'idle' {showPresets && !isCompressing && ({showPresets && !isCompressing && ( (
               <div className="border-t border-gray-100 px-6 sm:px-8 py-6">
                 <PresetSelector
                   preset={preset}
