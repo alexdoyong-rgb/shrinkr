@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     // Delete from Redis after download
     await deleteRecord(fileId)
 
-    return new NextResponse(fileData.buffer, {
+    return new NextResponse(new Uint8Array(fileData.buffer), {
       status: 200,
       headers: {
         'Content-Type': fileData.mimeType,
