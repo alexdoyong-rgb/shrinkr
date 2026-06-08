@@ -35,7 +35,6 @@ export default function Home() {
 
   const handleCompress = async () => {
     if (!selectedFile) return
-
     setStage('uploading')
     setError(null)
     setResult(null)
@@ -90,7 +89,6 @@ export default function Home() {
         return
       }
 
-      // Redirect to Stripe Checkout
       window.location.href = data.url
     } catch {
       setError('Failed to start checkout. Please try again.')
@@ -107,8 +105,8 @@ export default function Home() {
   }
 
   const isCompressing = stage === 'uploading'
-  const showPresets = selectedFile && (stage === 'idle' || isCompressing)
-  const showResult = stage === 'done' && result
+  const showPresets = selectedFile !== null && (stage === 'idle' || isCompressing)
+  const showResult = stage === 'done' && result !== null
 
   return (
     <main className="min-h-screen flex flex-col">
@@ -116,58 +114,55 @@ export default function Home() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 sm:py-20">
         {/* Hero text */}
-        <div className="text-center mb-10 animate-in">
-          <div className="inline-flex items-center gap-2 bg-brand-faint text-brand text-xs font-medium px-3 py-1.5 rounded-full mb-5 font-mono tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse-soft inline-block" />
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 text-xs font-medium px-3 py-1.5 rounded-full mb-5 tracking-wide">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" />
             No signup. No friction. Just results.
           </div>
-          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-ink leading-[1.05] tracking-tight mb-4">
+          <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-ink leading-tight tracking-tight mb-4">
             Make your file<br />
-            <span className="text-brand">upload-ready</span> anywhere.
+            <span className="text-blue-600">upload-ready</span> anywhere.
           </h1>
-          <p className="text-ink-muted text-lg sm:text-xl max-w-md mx-auto leading-relaxed">
+          <p className="text-gray-500 text-lg sm:text-xl max-w-md mx-auto leading-relaxed">
             Compress any image or PDF to your exact target size.
             Email it. Send it. Submit it. Done.
           </p>
         </div>
 
         {/* Main card */}
-        <div className="w-full max-w-2xl animate-in animate-in-delay-1">
-          <div className="bg-white rounded-3xl shadow-lift border border-paper-border overflow-hidden">
+        <div className="w-full max-w-2xl">
+          <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
+
             {/* Drop zone */}
             <div className="p-6 sm:p-8">
               <Dropzone
                 onFileDrop={handleFileDrop}
                 selectedFile={selectedFile}
-                isCompressing={stage === 'uploading'}
+                isCompressing={isCompressing}
                 onClear={handleReset}
               />
             </div>
 
-            {/* Preset selector — shown once file is selected */}
-            {showPresets && (
-              <div className="border-t border-paper-border px-6 sm:px-8 py-6 animate-in">
+            {/* Preset selector */}
+            {showPresets && !isCompressing && (
+              <div className="border-t border-gray-100 px-6 sm:px-8 py-6">
                 <PresetSelector
                   preset={preset}
                   customMB={customMB}
-                  originalSize={selectedFile.size}
+                  originalSize={selectedFile!.size}
                   onPresetChange={setPreset}
                   onCustomMBChange={setCustomMB}
                 />
 
                 {error && (
                   <div className="mt-4 flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-100 rounded-xl text-sm text-red-700">
-                    <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
-                    </svg>
                     {error}
                   </div>
                 )}
 
                 <button
                   onClick={handleCompress}
-                  disabled={stage === 'uploading'}
-                  className="btn-press mt-5 w-full flex items-center justify-center gap-2.5 bg-ink text-white font-display font-semibold text-base px-6 py-3.5 rounded-2xl hover:bg-ink-soft transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed shadow-subtle"
+                  className="mt-5 w-full flex items-center justify-center gap-2.5 bg-gray-900 text-white font-semibold text-base px-6 py-3.5 rounded-2xl hover:bg-gray-800 transition-all duration-150 shadow-sm"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
@@ -179,9 +174,9 @@ export default function Home() {
 
             {/* Compression result */}
             {showResult && (
-              <div className="border-t border-paper-border px-6 sm:px-8 py-6 animate-in">
+              <div className="border-t border-gray-100 px-6 sm:px-8 py-6">
                 <CompressionResult
-                  result={result}
+                  result={result!}
                   onCheckout={handleCheckout}
                   onReset={handleReset}
                   isCheckingOut={isCheckingOut}
@@ -189,20 +184,19 @@ export default function Home() {
               </div>
             )}
 
-            {/* Error when result stage fails */}
+            {/* Error state */}
             {stage === 'error' && !showPresets && (
-              <div className="border-t border-paper-border px-6 sm:px-8 py-6 animate-in">
-                <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-100 rounded-xl text-sm text-red-700 mb-4">
+              <div className="border-t border-gray-100 px-6 sm:px-8 py-6">
+                <div className="p-3.5 bg-red-50 border border-red-100 rounded-xl text-sm text-red-700 mb-4">
                   {error}
                 </div>
-                <button onClick={handleReset} className="text-sm text-brand underline underline-offset-2">
+                <button onClick={handleReset} className="text-sm text-blue-600 underline underline-offset-2">
                   Start over
                 </button>
               </div>
             )}
           </div>
 
-          {/* Trust signals */}
           <TrustBadges />
         </div>
       </div>
