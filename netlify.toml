@@ -2,9 +2,12 @@
   command = "npm run build"
   publish = ".next"
 
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
+  SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
+  npm_config_platform = "linux"
+  npm_config_arch = "x64"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

@@ -29,5 +29,8 @@
     "autoprefixer": "^10",
     "eslint": "^8",
     "eslint-config-next": "^14"
+  },
+  "optionalDependencies": {
+    "@img/sharp-linux-x64": "^0.33.4"
   }
 }
