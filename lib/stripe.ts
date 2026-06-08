@@ -11,7 +11,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-06-20',
+  apiVersion: '2024-04-10',
   appInfo: {
     name: 'Shrinkr',
     version: '0.1.0',
@@ -28,9 +28,6 @@ export interface CreateCheckoutParams {
   compressedSize: number
 }
 
-/**
- * Create a Stripe Checkout Session for a $1 download.
- */
 export async function createCheckoutSession(params: CreateCheckoutParams): Promise<Stripe.Checkout.Session> {
   const { fileId, fileName, originalSize, compressedSize } = params
 
@@ -58,14 +55,10 @@ export async function createCheckoutSession(params: CreateCheckoutParams): Promi
     },
     success_url: `${APP_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${APP_URL}/cancel`,
-    // Allow promotion codes for future discounts
     allow_promotion_codes: true,
   })
 }
 
-/**
- * Retrieve a completed session and extract the fileId from metadata.
- */
 export async function getSessionMetadata(
   sessionId: string
 ): Promise<{ fileId: string; fileName: string } | null> {
@@ -82,9 +75,6 @@ export async function getSessionMetadata(
   }
 }
 
-/**
- * Verify a Stripe webhook signature and return the event.
- */
 export function constructWebhookEvent(
   payload: Buffer,
   signature: string,
