@@ -16,7 +16,7 @@ export function Dropzone({ onFileDrop, selectedFile, isCompressing, onClear }: D
   const [dropError, setDropError] = useState<string | null>(null)
 
   const onDrop = useCallback(
-    (accepted: File[], rejected: { file: File; errors: { code: string }[] }[]) => {
+    (accepted: File[], rejected: import('react-dropzone').FileRejection[]) => {
       setDropError(null)
 
       if (rejected.length > 0) {
