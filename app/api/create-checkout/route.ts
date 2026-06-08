@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createCheckoutSession } from '@/lib/stripe'
-import { getRecord } from '@/lib/fileStore'
+import { recordExists } from '@/lib/fileStore'
 
 export const runtime = 'nodejs'
 
@@ -20,28 +20,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Verify the file actually exists in our store
-    const record = getRecord(fileId)
-    if (!record) {
+    const exists = await recordExists(fileId)
+    if (!exists) {
       return NextResponse.json(
         { error: 'File not found or expired. Please re-upload.' },
-        { status: 404 },
+        { status: 404 }
       )
     }
 
-    if (!record.compressedPath) {
-      return NextResponse.json(
-        { error: 'File has not been compressed yet.' },
-        { status: 400 },
-      )
-    }
-
-    const session = await createCheckoutSession({
-      fileId,
-      fileName,
-      originalSize,
-      compressedSize,
-    })
+    const session = await createCheckoutSession({ fileId, fileName, originalSize, compressedSize })
 
     return NextResponse.json({ url: session.url })
   } catch (err: unknown) {

@@ -1,14 +1,6 @@
-/**
- * GET /api/download?session_id=...
- *
- * Verifies Stripe payment then streams the compressed file.
- * File is deleted after download.
- */
-
 import { NextRequest, NextResponse } from 'next/server'
-import fs from 'fs'
 import { getSessionMetadata } from '@/lib/stripe'
-import { getCompressedPath, getRecord, deleteRecord } from '@/lib/fileStore'
+import { getCompressedBuffer, deleteRecord } from '@/lib/fileStore'
 
 export const runtime = 'nodejs'
 
@@ -21,56 +13,34 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Verify payment via Stripe
+    // Verify payment
     const meta = await getSessionMetadata(sessionId)
-
     if (!meta) {
-      return NextResponse.json(
-        { error: 'Payment not verified or session expired.' },
-        { status: 403 },
-      )
+      return NextResponse.json({ error: 'Payment not verified or session expired.' }, { status: 403 })
     }
 
     const { fileId, fileName } = meta
 
-    const record = getRecord(fileId)
-    if (!record) {
+    // Get compressed file from Redis
+    const fileData = await getCompressedBuffer(fileId)
+    if (!fileData) {
       return NextResponse.json(
-        { error: 'File expired. Files are only kept for 15 minutes after upload.' },
-        { status: 404 },
+        { error: 'File expired. Files are kept for 15 minutes after upload. Please compress again.' },
+        { status: 404 }
       )
     }
 
-    const compressedPath = getCompressedPath(fileId)
-    if (!compressedPath) {
-      return NextResponse.json({ error: 'Compressed file not found.' }, { status: 404 })
-    }
+    const downloadName = getDownloadName(fileName, fileData.mimeType)
 
-    // Check file exists on disk
-    if (!fs.existsSync(compressedPath)) {
-      return NextResponse.json({ error: 'File missing from disk.' }, { status: 404 })
-    }
+    // Delete from Redis after download
+    await deleteRecord(fileId)
 
-    // Stream the file
-    const fileStream = fs.createReadStream(compressedPath)
-    const stat = fs.statSync(compressedPath)
-
-    // Determine content-type and clean download name
-    const contentType = record.mimeType
-    const downloadName = getDownloadName(fileName, record.mimeType)
-
-    // Schedule deletion after response
-    fileStream.on('end', () => {
-      deleteRecord(fileId).catch(console.error)
-    })
-
-    // @ts-expect-error — ReadableStream from Node fs works here
-    return new NextResponse(fileStream, {
+    return new NextResponse(fileData.buffer, {
       status: 200,
       headers: {
-        'Content-Type': contentType,
+        'Content-Type': fileData.mimeType,
         'Content-Disposition': `attachment; filename="${downloadName}"`,
-        'Content-Length': stat.size.toString(),
+        'Content-Length': fileData.buffer.length.toString(),
         'Cache-Control': 'no-store',
       },
     })
@@ -82,8 +52,8 @@ export async function GET(request: NextRequest) {
 }
 
 function getDownloadName(originalName: string, mimeType: string): string {
-  const base = originalName.replace(/\.[^/.]+$/, '') // strip extension
-  if (mimeType === 'image/png') return `${base}_shrinkr.webp` // we convert PNG→webp
+  const base = originalName.replace(/\.[^/.]+$/, '')
+  if (mimeType === 'image/png') return `${base}_shrinkr.webp`
   if (mimeType === 'image/jpeg') return `${base}_shrinkr.jpg`
   if (mimeType === 'image/webp') return `${base}_shrinkr.webp`
   if (mimeType === 'application/pdf') return `${base}_shrinkr.pdf`

@@ -16,7 +16,8 @@
     "stripe": "^15.12.0",
     "react-dropzone": "^14.2.3",
     "uuid": "^10.0.0",
-    "clsx": "^2.1.1"
+    "clsx": "^2.1.1",
+    "@upstash/redis": "^1.34.0"
   },
   "devDependencies": {
     "@types/node": "^20",
